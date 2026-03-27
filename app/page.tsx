@@ -1,27 +1,23 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-// 不要直接导入 Plotly，改为动态导入
+import dynamic from 'next/dynamic';
+
+// 动态导入 Plotly，禁用 SSR，并忽略类型错误
+// @ts-ignore
+const Plotly = dynamic(() => import('plotly.js-dist'), { ssr: false });
 
 export default function Home() {
   const chartRef = useRef<HTMLDivElement>(null);
   const [inputText, setInputText] = useState('');
   const [simulatedResponse, setSimulatedResponse] = useState('');
-  const [plotlyLoaded, setPlotlyLoaded] = useState(false);
 
-  // 动态加载 plotly.js
+  // 绘制图表（仅客户端执行）
   useEffect(() => {
-    import('plotly.js-dist').then((PlotlyModule) => {
-      setPlotlyLoaded(true);
-    });
-  }, []);
-
-  // 绘制图表（仅在 plotlyLoaded 为 true 时执行）
-  useEffect(() => {
-    if (!plotlyLoaded || !chartRef.current) return;
-
-    // 动态导入后，从模块中获取 Plotly
-    import('plotly.js-dist').then((Plotly) => {
+    if (!chartRef.current) return;
+    const drawChart = async () => {
+      // @ts-ignore
+      const PlotlyModule = await import('plotly.js-dist');
       const algorithms = ['AC算法', '关键词匹配', '机器学习'];
       const responseTimes = [0.30, 0.82, 1.21];
       const colors = ['#3b82f6', '#10b981', '#f59e0b'];
@@ -46,26 +42,27 @@ export default function Home() {
         margin: { t: 50, b: 50, l: 50, r: 30 }
       };
 
-      Plotly.newPlot(chartRef.current, [trace], layout);
-    });
-  }, [plotlyLoaded]);
+      PlotlyModule.newPlot(chartRef.current, [trace], layout);
+    };
+    drawChart();
+  }, []);
 
-  const handleSimulate = () => {
-    if (!inputText.trim()) {
-      setSimulatedResponse('请输入一个问题，例如：“发生火灾怎么办”');
-      return;
-    }
-    const lower = inputText.toLowerCase();
-    if (lower.includes('火灾')) {
-      setSimulatedResponse('🔥 意图识别：【事件类型：火灾】。系统将返回火灾处置措施。\n\n在未来产品中，类似的技术可将您的自然语言需求转化为数据图表，如：“绘制火灾发生时安全撤离的的图示”，');
-    } else if (lower.includes('地震')) {
-      setSimulatedResponse('🌍 意图识别：【事件类型：地震】。系统将返回地震应急指南。');
-    } else if (lower.includes('急救') || lower.includes('突发疾病')) {
-      setSimulatedResponse('🚑 意图识别：【事件类型：突发疾病】。系统将返回急救措施。');
-    } else {
-      setSimulatedResponse('💡 意图识别：【通用查询】。系统将返回应急事件通用处理流程。\n\n将自然语言转化为精准的数据分析与可视化结果。');
-    }
-  };
+ const handleSimulate = () => {
+  if (!inputText.trim()) {
+    setSimulatedResponse('请输入一个问题，例如：“发生火灾怎么办”');
+    return;
+  }
+  const lower = inputText.toLowerCase();
+  if (lower.includes('火灾')) {
+    setSimulatedResponse('🔥 意图识别：【事件类型：火灾】。系统将返回火灾处置措施。\n\n在未来产品优化中，可将您的自然语言需求转化为数据图示，如：“火灾发生时安全撤退线路”。');
+  } else if (lower.includes('地震')) {
+    setSimulatedResponse('🌍 意图识别：【事件类型：地震】。系统将返回地震应急指南。\n\n');
+  } else if (lower.includes('急救') || lower.includes('突发疾病')) {
+    setSimulatedResponse('🚑 意图识别：【事件类型：突发疾病】。系统将返回急救措施。\n\n');
+  } else {
+    setSimulatedResponse('💡 意图识别：【通用查询】。系统将返回应急事件通用处理流程。\n\n');
+  }
+};
 
   return (
     <main className="min-h-screen bg-gray-50 p-8">
@@ -73,9 +70,9 @@ export default function Home() {
         {/* 头部信息 */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Dai Yi</h1>
-          <p className="text-xl text-gray-600">北京交通大学 · 计算机</p>
+          <p className="text-xl text-gray-600">北京交通大学 · 计算机科学与技术 </p>
           <p className="text-gray-500 mt-2">
-            全栈开发者&学习者  | 正在寻找远程前端 / AI产品开发 /人机交互方向 兼职
+            热爱 新产品与人机交互 | 正在寻找远程前端 / AI产品开发兼职
           </p>
         </div>
 
@@ -84,7 +81,7 @@ export default function Home() {
           <h2 className="text-2xl font-semibold mb-4">技术栈</h2>
           <div className="flex flex-wrap gap-3">
             {[
-              'Python', 'C++', 'Flask', 'Neo4j', 'React', 'Next.js', 'TypeScript',
+              'Python', 'Flask', 'Neo4j', 'React', 'Next.js', 'TypeScript',
               'FastAPI', 'Plotly.js', 'Git'
             ].map(tech => (
               <span key={tech} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
@@ -105,7 +102,7 @@ export default function Home() {
               </a>
             </li>
             <li>
-              <strong>个人作品集网站</strong> – 使用 Next.js / React 完成本网站，包含项目数据可视化与交互模拟。
+              <strong>个人作品集网站</strong> – 使用Next.js / React 完成本网站，包含项目数据可视化与交互模拟。
               <a href="https://github.com/artist1016/my-portfolio" className="text-blue-600 hover:underline ml-2" target="_blank" rel="noopener noreferrer">
                 [GitHub]
               </a>
@@ -115,23 +112,21 @@ export default function Home() {
 
         {/* 数据可视化模块：毕设算法性能对比 */}
         <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 className="text-2xl font-semibold mb-2">📊 进展与思考</h2>
+          <h2 className="text-2xl font-semibold mb-2">📊思考</h2>
           <p className="text-gray-600 mb-4">
             我的毕业设计实现了从自然语言到结构化查询的转换，这与“对话式数据分析”的理念一脉相承——都是通过理解用户意图，自动化完成复杂流程。
           </p>
-          <div className="mb-4">
-            <div ref={chartRef} style={{ width: '100%', height: '450px' }} />
-            <p className="text-sm text-gray-500 text-center mt-2">
-              * 基于设计性能评估数据，AC算法在轻量级场景中优势明显。
-            </p>
-          </div>
+          <div ref={chartRef} style={{ width: '100%', height: '450px' }} />
+          <p className="text-sm text-gray-500 text-center mt-2">
+            * 基于真实毕业设计性能评估数据，AC算法在轻量级场景中优势明显。
+          </p>
         </div>
 
         {/* 自然语言模拟器 */}
         <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 className="text-2xl font-semibold mb-2">💬 模拟我的问答系统 → 关联 </h2>
+          <h2 className="text-2xl font-semibold mb-2">💬 模拟我的问答系统</h2>
           <p className="text-gray-600 mb-4">
-            下方模拟器展示我的毕业设计如何理解自然语言问题并分类。
+            下方模拟器展示我的毕业设计如何理解自然语言问题并分类。在 MindPlot 中，类似的技术用于理解数据需求，自动生成图表。
           </p>
           <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <input
@@ -155,7 +150,7 @@ export default function Home() {
             </div>
           )}
           <p className="text-xs text-gray-400 mt-4 text-center">
-            * 实际毕业设计中，问句分类由 AC 算法自动完成，此处仅作演示。
+            * 实际毕业设计中，问句分类由 AC 算法自动完成，响应时间极短。
           </p>
         </div>
 
